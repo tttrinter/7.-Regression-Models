@@ -1,0 +1,122 @@
+---
+title: 'Coursera Regression Models: MPG Analysis'
+output: pdf_document
+date: "Saturday, May 23, 2015"
+---
+
+```{r GetData, echo=FALSE}
+data(mtcars)
+
+#mean mpg for automatic
+mean_auto=mean(mtcars[mtcars$am==0,]$mpg)
+
+#mean mpg for manual
+mean_manual=mean(mtcars[mtcars$am==1,]$mpg)
+
+```
+### Executive Summary
+
+*Motor Trend* magazine is interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). More specifically, they are interested in whether automatic or manual transmission cars get better gas mileage and would like to see the differences quantified.  Using regression analysis on the mtcars dataset, we can show that on average cars with manaual transmissions get better gas mileage than automatic (`r format(mean_manual, digits=3)` vs `r format(mean_auto, digits=3)`), but that there are more important variables that impact mpg than just the type of transmission, such as vehicle weight, size of engine, etc... 
+
+### Exploratory Data Analysis
+First we take a look at all of the different measurements and factors vs. MPG to get an idea of which variables could be influential on the mpg. We could have used a pairs plot, but this showed all combinations of variables.  Since we are only interested in MPG, I limited the plots to only MPG as the Y variable.  
+```{r ExploreGraphs, echo=FALSE, fig.height=4, fig.width=4, fig.align='center'}
+par(mfrow=c(3,3),mar = rep(2, 4))
+plot(mtcars$cyl, mtcars$mpg, main="Cylinders"); lines(mtcars$cyl, lm(mpg ~ cyl, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$disp, mtcars$mpg,main="Displacement"); lines(mtcars$disp, lm(mpg ~ disp, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$hp, mtcars$mpg,main="HP"); lines(mtcars$hp, lm(mpg ~ hp, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$drat, mtcars$mpg,main="Rear Axle Ratio"); lines(mtcars$drat, lm(mpg ~ drat, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$wt, mtcars$mpg,main="Weight"); lines(mtcars$wt, lm(mpg ~ wt, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$vs, mtcars$mpg,main="V/S"); lines(mtcars$vs, lm(mpg ~ vs, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$am, mtcars$mpg,main="Transmission"); lines(mtcars$am, lm(mpg ~ am, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$gear, mtcars$mpg,main="Gears"); lines(mtcars$gear, lm(mpg ~ gear, data=mtcars)$fitted, lwd=3, col="green")
+plot(mtcars$carb, mtcars$mpg,main="Carbs"); lines(mtcars$carb, lm(mpg ~ carb, data=mtcars)$fitted, lwd=3, col="green")
+```
+
+We can look at the regression lines to see that cylinders, displacement, hp, and number of carbuerators are all negatively correlated with mpg witht the other variables all positively correlated. Intuitively, weight seems like it would be a major contributor to mpg, so we next take a look at mpg vs weight for manual and automatic transmissions:  
+
+```{r WeightAM, echo=FALSE, fig.width=7,fig.height=3}
+library(ggplot2)
+mtcars$trans="Automatic"
+mtcars[mtcars$am==1,]$trans="Manual"
+g=ggplot(mtcars,aes(x=wt, y=mpg, fill=trans),)
+g=g+xlab("Weight")
+g=g+ylab("MPG")
+g=g + ggtitle("MPG vs Weight and Transmission")
+g=g+geom_point(size=4, color="black",alpha=0.2)
+g=g+geom_point(size=3, color="blue", alpha=0.2)
+g=g+geom_smooth(method="lm",color="black")
+g
+```
+In this plot we can see that overall manual transmission cars may get better gas mileage, but this could be more a reflection of their weight than their transmission. We even see for the heavier, manual cars, that the automatic transmision cars with the same weight actually get better gas mileage.    
+
+In order to better understand the variables that most influence mpg, the next step was to look at a linear regression including all variables.  
+```{r Fit1, echo=TRUE}
+fit1=lm(mpg ~ ., data=mtcars)
+summary(fit1)$coef
+fit1R2=summary(fit1)$r.squared
+```
+This model has an R-squared of `r format(fit1R2, digits=3)`, but the large P-values for each variable suggest that the model is overfit.  The next step is to evaluate different combinations of the variables to find a better fitting model.  The next iteration looks at only the transmission, since this was the initial question. Then additional variables were added with the resulting R squared and assocaited P-values reviewed to evaluate the model fit.  Looking at the exploratory graphs, both weight and displacement have the steepest slope and therefore are good candidates for the next iterations of the model. The iterations of the model are listed in the appendix.
+
+
+
+Linear Models
+```{r Fit2, echo=FALSE}
+fit1=lm(mpg ~ ., data=mtcars)
+# summary(fit1)$coef
+fit1R2=summary(fit1)$r.squared
+
+fit2=lm(mtcars$mpg ~ mtcars$am)
+# summary(fit2)$coef
+fit2R2=summary(fit2)$r.squared
+
+fit3=lm(mtcars$mpg ~ mtcars$am+mtcars$wt)
+# summary(fit3)$coef
+fit3R2=summary(fit3)$r.squared
+
+fit4=lm(mpg ~ am+ wt+cyl, data=mtcars)
+# summary(fit4)$coef
+fit4R2=summary(fit4)$r.squared
+
+fit5=lm(mpg ~ wt+cyl, data=mtcars)
+# summary(fit5)$coef
+fit5R2=summary(fit5)$r.squared
+
+fit6=lm(mpg ~ wt+cyl+disp, data=mtcars)
+# summary(fit6)$coef
+fit6R2=summary(fit6)$r.squared
+```
+Model   Variables           R-Squared
+-----   ---------           ---------
+1       All                 `r format(fit1R2, digits=3)`
+2       am                  `r format(fit2R2, digits=3)`
+3       am,wt               `r format(fit3R2, digits=3)`
+4       am,wt,cyl           `r format(fit4R2, digits=3)`
+5       wt, cyl             `r format(fit5R2, digits=3)`
+6       wt,cyl,disp         `r format(fit6R2, digits=3)`
+
+Looking at the model summary of the last three models:  
+
+Model 4: Transmission, Weight and cylinders  
+```{r Fit4}
+summary(fit4)$coef
+```
+Looking at the model with transmission, weight and cylinders, the P-value for transmissions is large, relative to the weight and cylinders - so I've removed it from the model in the next iteration.
+
+Model 5: Weight and Cylinders.  
+```{r Fit5}
+summary(fit5)$coef
+```
+This model looks good, but maybe the addition of another variable (displacement) will improve it yet further.  
+```{r fit6}
+summary(fit6)$coef
+```
+The P-value for the additional variable is also large relative to the weight and cylinders.  The impact to R-squared was minimal, so we can remove displacement and choose fit5 as the final model.
+
+Looking at the residual plots for the final model:
+```{r ResidualPlots, echo=FALSE, fig.align='center', fig.height=5, fig.width=5}
+par(mfrow=c(2,2))
+plot(fit5)
+```
+
+Nothing stands out in the residual plots as concerning.  The residuals vs. fitted values are relatively evenly spread. The Q-Q plot is close to the identity line, but is showing a slight, cyclical pattern that could reflect one of the factor variables.  Nothing stands out in the other two plots as an outlier or cause for further model refinement.

@@ -1,7 +1,7 @@
 data(mtcars)
 
 pairs(mpg~.,data=mtcars,panel=panel.smooth, main="Cars data")
-par(mfrow=c(3,3))
+par(mfrow=c(3,3),mar = rep(2, 4))
 plot(mtcars$cyl, mtcars$mpg, main="Cylinders"); lines(mtcars$cyl, lm(mpg ~ cyl, data=mtcars)$fitted, lwd=3, col="green")
 plot(mtcars$disp, mtcars$mpg,main="Displacement"); lines(mtcars$disp, lm(mpg ~ disp, data=mtcars)$fitted, lwd=3, col="green")
 plot(mtcars$hp, mtcars$mpg,main="HP"); lines(mtcars$hp, lm(mpg ~ hp, data=mtcars)$fitted, lwd=3, col="green")
@@ -39,6 +39,7 @@ g=g+geom_point(size=4,color="blue",alpha=0.2)
 g=g+geom_smooth(method="lm",color="black")
 g
 
+library(gridExtra)
 #add in weight and group by transmission
 mtcars$trans="Automatic"
 mtcars[mtcars$am==1,]$trans="Manual"
@@ -48,7 +49,7 @@ g=g+ylab("MPG")
 g=g+geom_point(size=5, color="black",alpha=0.2)
 g=g+geom_point(size=4, color="blue", alpha=0.2)
 g=g+geom_smooth(method="lm",color="black")
-g
+g1=g
 
 #add in weight and group by transmission
 g=ggplot(mtcars,aes(x=cyl, y=mpg, fill=trans),)
@@ -57,19 +58,45 @@ g=g+ylab("MPG")
 g=g+geom_point(size=5, color="black",alpha=0.2)
 g=g+geom_point(size=4, color="blue", alpha=0.2)
 g=g+geom_smooth(method="lm",color="black")
-g
+g2=g
+
+grid.arrange(g1, g2, ncol = 2, main = "Grid Plot")
 
 #Did the student fit multiple models and detail their strategy for model selection?
 #Look at linear model on transmission only
-fit=lm(mtcars$mpg ~ mtcars$am)
-summary(fit)
+fit1=lm(mpg ~ ., data=mtcars)
+summary(fit1)$coef
+fit1R2=summary(fit1)$r.squared
+# plot(fit)
 
-fit=lm(mtcars$mpg ~ mtcars$am+mtcars$wt)
-summary(fit)
+fit2=lm(mtcars$mpg ~ mtcars$am)
+summary(fit2)$coef
+fit2R2=summary(fit2)$r.squared
 
 
-fit=lm(mtcars$mpg ~ mtcars$am+mtcars$wt+mtcars$cyl)
-summary(fit)
+fit3=lm(mtcars$mpg ~ mtcars$am+mtcars$wt)
+summary(fit3)$coef
+fit3R2=summary(fit3)$r.squared
+# plot(fit)
+
+
+fit4=lm(mpg ~ am+ wt+cyl, data=mtcars)
+summary(fit4)$coef
+fit4R2=summary(fit4)$r.squared
+
+# plot(fit)
+
+fit5=lm(mpg ~ wt+cyl, data=mtcars)
+summary(fit5)$coef
+fit5R2=summary(fit5)$r.squared
+
+# plot(fit)
+
+fit6=lm(mpg ~ wt+cyl+disp, data=mtcars)
+summary(fit6)$coef
+fit6R2=summary(fit6)$r.squared
+
+plot(fit5)
 
 
 #Did the student answer the questions of interest or detail why the question(s) is (are) not answerable?
